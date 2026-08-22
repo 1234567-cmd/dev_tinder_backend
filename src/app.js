@@ -5,5 +5,5 @@ app.listen(3000,()=>{
 })
 
 app.use("/test",(req, res)=>{
-    res.send("Server is Responding ")
+    res.send("Server is Responding Positive ")
 })
