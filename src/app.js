@@ -1,19 +1,15 @@
-const express= require("express")
-const app= express();
-app.listen(3000,()=>{
-  console.log("Server is set on port 3000");
-})
+const express = require("express");
 
-// app.use("/test",(req, res)=>{
-//     res.send("Server is Responding Positive ")
-// })
-app.get("/user",(req,res,next)=>{
-  console.log(req.query)
-  res.send({
-    name:"Waseem Ahmad"
-  })
-  next()
-},((req,res)=>{
-  console.log("working")
-  res.send("Second")
-}))
+const app = express();
+
+const { isAdmin } = require("./middlewares/auth");
+
+app.get("/user", isAdmin, (req, res) => {
+  console.log(req.query);
+
+  res.send("getusers");
+});
+
+app.listen(3000, () => {
+  console.log("Server is set on port 3000");
+});
