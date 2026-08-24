@@ -6,6 +6,15 @@ const { isAdmin } = require("./middlewares/auth");
 
 const connectDB = require("./config/database");
 
+const User = require("./models/user")
+
+app.use(express.json())
+
+app.post("/signup", async (req, res) => {
+  const user = new User(req.body)
+  await user.save()
+  res.send("user added")
+})
 
 app.get("/user", isAdmin, (req, res) => {
   console.log(req.query);
