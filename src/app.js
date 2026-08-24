@@ -15,11 +15,17 @@ app.post("/signup", async (req, res) => {
   await user.save()
   res.send("user added")
 })
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({});
 
-app.get("/user", isAdmin, (req, res) => {
-  console.log(req.query);
+    console.log(users);
 
-  res.send("getusers");
+    res.status(200).send(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong");
+  }
 });
 
 connectDB()
