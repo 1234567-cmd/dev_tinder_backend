@@ -28,4 +28,18 @@ const validateSignUpData = (req) => {
   }
 };
 
-module.exports = { validateSignUpData };
+const validateLoginData = (req) => {
+  const { emailId, password } = req.body;
+  if (!emailId || !validator.isEmail(emailId)) {
+    throw new Error("Email is not valid");
+  }
+
+  if (!password || !validator.isStrongPassword(password)) {
+    throw new Error(
+      "Password is weak: use at least 8 characters with uppercase, lowercase, a number and a symbol"
+    );
+  }
+}
+
+
+module.exports = { validateSignUpData, validateLoginData };
