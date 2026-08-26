@@ -24,13 +24,9 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        validate(value) {
-            if (!validator.isStrongPassword(value)) {
-                throw new Error("Password is weak");
-            }
-        },
-
-        },
+        // Strength is validated on the raw password in the /signup route;
+        // the stored value is a bcrypt hash, so no validator here.
+    },
         age: {
             type: Number,
             min: 18

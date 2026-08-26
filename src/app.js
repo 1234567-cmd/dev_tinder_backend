@@ -7,6 +7,8 @@ const { isAdmin } = require("./middlewares/auth");
 const connectDB = require("./config/database");
 
 const User = require("./models/user")
+const bcrypt = require("bcrypt");
+const { validateSignUpData } = require("./utils/validation");
 
 app.use(express.json())
 
@@ -22,7 +24,23 @@ const getErrorMessage = (error) => {
 
 app.post("/signup", async (req, res) => {
   try {
-    const user = new User(req.body);
+    // 1. Validate the raw request data
+    validateSignUpData(req);
+
+    const { firstName, lastName, emailId, password } = req.body;
+
+    // 2. Hash the password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // 3. Create the user with the hash (never the plaintext)
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
     await user.save();
     res.status(201).send("User added successfully");
   } catch (error) {
