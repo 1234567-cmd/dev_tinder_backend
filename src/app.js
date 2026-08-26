@@ -10,6 +10,16 @@ const User = require("./models/user")
 
 app.use(express.json())
 
+// Pull the human-readable message(s) out of a Mongoose error
+const getErrorMessage = (error) => {
+  if (error.name === "ValidationError") {
+    return Object.values(error.errors)
+      .map((e) => e.message)
+      .join(", ");
+  }
+  return error.message;
+};
+
 app.post("/signup", async (req, res) => {
   try {
     const user = new User(req.body);
@@ -17,7 +27,7 @@ app.post("/signup", async (req, res) => {
     res.status(201).send("User added successfully");
   } catch (error) {
     console.error(error);
-    res.status(400).send("Error saving the user");
+    res.status(400).send(getErrorMessage(error));
   }
 });
 app.get("/users", async (req, res) => {
@@ -76,6 +86,29 @@ app.patch("/user/:id", async (req, res) => {
     const id = req.params.id;
     const data = req.body;
 
+    const ALLOWED_UPDATES = [
+      "firstName",
+      "lastName",
+      "age",
+      "gender",
+      "photoUrl",
+      "skills",
+      "about",
+      "emailId"
+    ];
+
+    const isUpdateAllowed = Object.keys(data).every((field) =>
+      ALLOWED_UPDATES.includes(field)
+    );
+
+    if (!isUpdateAllowed) {
+      return res.status(400).send("Update not allowed");
+    }
+
+    if (data.skills && data.skills.length > 10) {
+      return res.status(400).send("Max 10 skills allowed");
+    }
+
     const user = await User.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
@@ -88,7 +121,7 @@ app.patch("/user/:id", async (req, res) => {
     res.send(user);
   } catch (error) {
     console.error(error);
-    res.status(400).send("Error updating the user");
+    res.status(400).send(getErrorMessage(error));
   }
 });
 
