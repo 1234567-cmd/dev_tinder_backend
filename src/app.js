@@ -13,10 +13,6 @@ const { validateSignUpData, validateLoginData } = require("./utils/validation");
 const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken');
 
-// Parse JSON request bodies (populates req.body) and cookies (populates req.cookies)
-app.use(express.json());
-app.use(cookieParser());
-
 app.post("/signup", async (req, res) => {
   try {
     // 1. Validate the raw request data
@@ -45,16 +41,16 @@ app.post("/signup", async (req, res) => {
     // 3. Create the user with the hash (never the plaintext)
     // Optional profile fields are passed through; Mongoose skips undefined ones.
     const user = new User({
-  firstName: firstName,
-  lastName: lastName,
-  emailId: emailId,
-  password: passwordHash,
-  age: age,
-  gender: gender,
-  photoUrl: photoUrl,
-  skills: skills,
-  about: about,
-});
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+      age,
+      gender,
+      photoUrl,
+      skills,
+      about,
+    });
 
     await user.save();
     res.status(201).send("User added successfully");
