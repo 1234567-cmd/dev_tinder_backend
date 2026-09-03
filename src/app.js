@@ -13,6 +13,9 @@ const { validateSignUpData, validateLoginData } = require("./utils/validation");
 const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken');
 
+app.use(express.json());
+app.use(cookieParser());
+
 app.post("/signup", async (req, res) => {
   try {
     // 1. Validate the raw request data
@@ -84,13 +87,13 @@ app.post('/login', async (req, res) => {
   
     res.status(200).json({ message: 'Logged in successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(400).json({ message: err.message });
   }
 });
 
 // Returns the currently logged-in user (populated by userAuth from the token cookie)
 app.get("/profile", userAuth, (req, res) => {
-  const user =req.user
   res.send(req.user);
 });
 
