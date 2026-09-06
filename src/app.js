@@ -4,7 +4,6 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/database");
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
-
 const app = express();
 
 app.use(express.json());

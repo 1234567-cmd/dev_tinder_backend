@@ -56,7 +56,18 @@ const userSchema = new mongoose.Schema({
             type: String
 
         }
-    }, { timestamps: true })
+    }, {
+        timestamps: true,
+        // Never serialize the password hash (or mongoose's __v) when a user
+        // document is sent in a response via res.json / res.send.
+        toJSON: {
+            transform(doc, ret) {
+                delete ret.password
+                delete ret.__v
+                return ret
+            }
+        }
+    })
 
 
 

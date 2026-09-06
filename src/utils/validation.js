@@ -34,12 +34,79 @@ const validateLoginData = (req) => {
     throw new Error("Email is not valid");
   }
 
-  // Strength is enforced at signup only; on login just require a value so a
-  // mistyped password reports "Invalid email or password" rather than "weak".
+
   if (!password) {
     throw new Error("Password is required");
   }
 };
 
+// Fields a user may change through PATCH /profile/edit. emailId and password
+// are deliberately excluded - they need their own flows (verification, hashing).
+const EDITABLE_PROFILE_FIELDS = [
+  "firstName",
+  "lastName",
+  "age",
+  "gender",
+  "photoUrl",
+  "skills",
+  "about",
+];
 
-module.exports = { validateSignUpData, validateLoginData };
+// Validates the edit-profile payload. Throws on the first problem found.
+// Type/format rules that live on the schema (age min, gender enum, photoUrl)
+// are left to Mongoose so they are not duplicated here.
+const validateEditProfileData = (req) => {
+  const body = req.body;
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new Error("Request body must be a JSON object");
+  }
+
+  const fields = Object.keys(body);
+  if (fields.length === 0) {
+    throw new Error("No fields provided to update");
+  }
+
+  const notAllowed = fields.filter((f) => !EDITABLE_PROFILE_FIELDS.includes(f));
+  if (notAllowed.length > 0) {
+    throw new Error(
+      `Cannot update field(s): ${notAllowed.join(", ")}. ` +
+        `Allowed: ${EDITABLE_PROFILE_FIELDS.join(", ")}`
+    );
+  }
+
+  const { firstName, lastName, skills, about } = body;
+
+  if (firstName !== undefined) {
+    if (typeof firstName !== "string" || firstName.trim().length < 2 || firstName.trim().length > 50) {
+      throw new Error("First name must be 2-50 characters");
+    }
+  }
+
+  if (lastName !== undefined) {
+    if (typeof lastName !== "string" || lastName.trim().length < 2 || lastName.trim().length > 50) {
+      throw new Error("Last name must be 2-50 characters");
+    }
+  }
+
+  if (skills !== undefined) {
+    if (!Array.isArray(skills) || !skills.every((s) => typeof s === "string")) {
+      throw new Error("Skills must be an array of strings");
+    }
+    if (skills.length > 10) {
+      throw new Error("Max 10 skills allowed");
+    }
+  }
+
+  if (about !== undefined) {
+    if (typeof about !== "string" || about.length > 500) {
+      throw new Error("About must be a string of at most 500 characters");
+    }
+  }
+};
+
+module.exports = {
+  validateSignUpData,
+  validateLoginData,
+  validateEditProfileData,
+};
