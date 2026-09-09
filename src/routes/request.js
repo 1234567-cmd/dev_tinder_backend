@@ -9,7 +9,7 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
         const { toUserId, status } = req.params;
         const fromUserId = req.user._id;
 
-        const allowedStatuses = ["ignored", "interested", "accepted", "rejected"];
+        const allowedStatuses = [ "accepted", "rejected", "interested", "ignored"];
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({ message: "Invalid status value" });
         }
@@ -48,4 +48,34 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
     }
 });
 
+requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
+    try {
+        const { status, requestId } = req.params;
+        const allowedStatuses = [ "accepted", "rejected"];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const connectionRequest = await ConnectionRequest.findById({ 
+            _id: requestId,
+            status: "interested",
+            toUserId: req.user._id
+         });
+        if (!connectionRequest) {
+            return res.status(404).json({ message: "Connection request not found" });
+        }
+
+        if (!connectionRequest.toUserId.equals(req.user._id)) {
+            return res.status(403).json({ message: "You are not authorized to review this connection request" });
+        }
+
+        connectionRequest.status = status;
+        const updatedRequest = await connectionRequest.save();
+        res.status(200).json({ message: "Connection request reviewed successfully", data: updatedRequest });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "An error occurred while reviewing the connection request", error: error.message });
+    }
+});
 module.exports = requestRouter;
