@@ -74,7 +74,8 @@ authRouter.post("/login", async (req, res) => {
     });
     res.cookie("token", token);
 
-    res.status(200).json({ message: "Logged in successfully" });
+    // toJSON on the User schema strips the password hash before sending.
+    res.status(200).json({ message: "Logged in successfully", data: user });
   } catch (err) {
     console.error(err);
     res.status(400).json({ message: err.message });
