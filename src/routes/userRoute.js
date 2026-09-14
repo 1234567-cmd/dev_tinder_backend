@@ -76,7 +76,7 @@ userRouter.get("/feed", userAuth, async (req, res) => {
 
         const total = await User.countDocuments(query);
         const feedUsers = await User.find(query)
-            .select('firstName lastName email')
+            .select('firstName lastName photoUrl age gender about skills')
             .skip(skip)
             .limit(limit);
 
