@@ -7,6 +7,14 @@ const { validateSignUpData, validateLoginData } = require("../utils/validation")
 
 const authRouter = express.Router();
 
+// Signs a 7-day JWT and stores it in the "token" cookie that the userAuth middleware reads.
+const setAuthCookie = (res, user) => {
+  const token = jwt.sign({ _id: user._id }, "VBHHJHHJHGHGHJG", {
+    expiresIn: "7d",
+  });
+  res.cookie("token", token);
+};
+
 authRouter.post("/signup", async (req, res) => {
   try {
     // 1. Validate the raw request data
@@ -25,14 +33,20 @@ authRouter.post("/signup", async (req, res) => {
     } = req.body;
 
     if (skills && skills.length > 10) {
-      return res.status(400).send("Max 10 skills allowed");
+      return res.status(400).json({ message: "Max 10 skills allowed" });
     }
 
-    // 2. Hash the password
+    // 2. Reject emails that are already registered (stored emails are trimmed and lowercased)
+    const existingUser = await User.findOne({ emailId: emailId.trim().toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: "An account with this email already exists" });
+    }
+
+    // 3. Hash the password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // 3. Create the user with the hash (never the plaintext)
+    // 4. Create the user with the hash (never the plaintext)
     // Optional profile fields are passed through; Mongoose skips undefined ones.
     const user = new User({
       firstName,
@@ -47,10 +61,19 @@ authRouter.post("/signup", async (req, res) => {
     });
 
     await user.save();
-    res.status(201).send("User added successfully");
+
+    // 5. Log the new user in straight away, the same way /login does.
+    setAuthCookie(res, user);
+
+    // toJSON on the User schema strips the password hash before sending.
+    res.status(201).json({ message: "User added successfully", data: user });
   } catch (error) {
     console.error(error);
-    res.status(400).send(error.message);
+    // 11000 is MongoDB's duplicate key error (emailId is unique) - covers two signups racing each other.
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "An account with this email already exists" });
+    }
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -69,10 +92,7 @@ authRouter.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ _id: user._id }, "VBHHJHHJHGHGHJG", {
-      expiresIn: "7d",
-    });
-    res.cookie("token", token);
+    setAuthCookie(res, user);
 
     // toJSON on the User schema strips the password hash before sending.
     res.status(200).json({ message: "Logged in successfully", data: user });
