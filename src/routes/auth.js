@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+dotenv.config();
 
 const User = require("../models/user");
 const { validateSignUpData, validateLoginData } = require("../utils/validation");
@@ -9,7 +11,7 @@ const authRouter = express.Router();
 
 // Signs a 7-day JWT and stores it in the "token" cookie that the userAuth middleware reads.
 const setAuthCookie = (res, user) => {
-  const token = jwt.sign({ _id: user._id }, "VBHHJHHJHGHGHJG", {
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
   res.cookie("token", token);

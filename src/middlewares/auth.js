@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
-const JWT_SECRET = "VBHHJHHJHGHGHJG";
-
 const userAuth = async (req, res, next) => {
   try {
     const { token } = req.cookies || {};
@@ -10,7 +8,7 @@ const userAuth = async (req, res, next) => {
     if (!token) {
       return res.status(401).send("Please login first");
     }
-    const { _id } = jwt.verify(token, JWT_SECRET);
+    const { _id } = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(_id);
 
