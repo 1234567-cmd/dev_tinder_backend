@@ -1,5 +1,8 @@
 
 const socket = require("socket.io")
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 const initializeSocket = (server) => {
     const io = socket(server, {
@@ -10,8 +13,10 @@ const initializeSocket = (server) => {
         }
     })
     io.on("connection", (socket) => {
-        socket.on("joinChat", () => {
-            console.log("User joined the chat")
+        socket.on("joinChat", ({loggedUser, targetUser}) => {
+            const roomId = [loggedUser, targetUser].sort().join("-")
+            socket.join(roomId)
+            console.log(`User ${loggedUser} joined room ${roomId}`)
         })
         socket.on("sendMessage", () => {
             console.log("Message sent")
