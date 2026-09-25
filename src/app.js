@@ -33,7 +33,7 @@ connectDB()
   .then(() => {
     console.log("Database Connected");
     server.listen(process.env.PORT, () => {
-      console.log(`Server is set on port ${process.env.PORT}`);
+      console.log(`DevTinder Docker Server v4 is set on port ${process.env.PORT}`);
     });
   })
   .catch((err) => {
