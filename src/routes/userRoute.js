@@ -1,6 +1,6 @@
 const express = require('express');
 const userRouter = express.Router();
-const { userAuth } = require("../middlewares/auth");
+const { userAuth, optionalAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionRequest");
 const User = require("../models/user");
 
@@ -43,7 +43,9 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
     }
 });
 
-userRouter.get("/feed", userAuth, async (req, res) => {
+// Guests (no valid token) get every user; logged-in users don't see themselves
+// or anyone they already have a connection request with.
+userRouter.get("/feed", optionalAuth, async (req, res) => {
     try {
         const user = req.user;
 
@@ -51,28 +53,31 @@ userRouter.get("/feed", userAuth, async (req, res) => {
         const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50);
         const skip = (page - 1) * limit;
 
-        const connections = await ConnectionRequest.find({
-            $or: [
-                { fromUserId: user._id,  },
-                { toUserId: user._id,  }
-            ]
-        }).select('fromUserId toUserId ');
+        let query = {};
+        if (user) {
+            const connections = await ConnectionRequest.find({
+                $or: [
+                    { fromUserId: user._id,  },
+                    { toUserId: user._id,  }
+                ]
+            }).select('fromUserId toUserId ');
 
-        const hideUsersFromFeed= new Set();
-        connections.forEach(connection => {
-            if (connection.fromUserId.toString() === user._id.toString()) {
-                hideUsersFromFeed.add(connection.toUserId.toString());
-            } else {
-                hideUsersFromFeed.add(connection.fromUserId.toString());
-            }
-        });
+            const hideUsersFromFeed= new Set();
+            connections.forEach(connection => {
+                if (connection.fromUserId.toString() === user._id.toString()) {
+                    hideUsersFromFeed.add(connection.toUserId.toString());
+                } else {
+                    hideUsersFromFeed.add(connection.fromUserId.toString());
+                }
+            });
 
-        const query = {
-         $and: [
-            { _id: { $ne: user._id } },
-            { _id: { $nin: Array.from(hideUsersFromFeed) } }
-         ]
-        };
+            query = {
+             $and: [
+                { _id: { $ne: user._id } },
+                { _id: { $nin: Array.from(hideUsersFromFeed) } }
+             ]
+            };
+        }
 
         const total = await User.countDocuments(query);
         const feedUsers = await User.find(query)
